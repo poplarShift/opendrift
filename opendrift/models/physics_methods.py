@@ -21,7 +21,11 @@ import scipy as sp
 from math import sqrt
 import matplotlib.pyplot as plt
 import pyproj
-import cmocean
+try:
+    import cmocean
+except:
+    logger.warning("cmocean not available")
+    cmocean = None
 
 
 def wind_drift_factor_from_trajectory(trajectory_dict, min_period=None):
