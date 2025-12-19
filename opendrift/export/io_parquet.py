@@ -21,7 +21,7 @@ def init(self, filename):
 
     self.outfile = filename
     dummy_data = {
-        k: pd.Series([], dtype=t) for k, (t, _) in self.history.dtype.fields.items()
+        k: pd.Series([], dtype=self.result[k].dtype) for k in self.result
     }
     dummy_data["time"] = pd.Series([], dtype="datetime64[ns]")
     df = pd.DataFrame(dummy_data)
@@ -32,10 +32,10 @@ def write_buffer(self):
     num_steps_to_export = self.steps_output - self.steps_exported
 
     data = {
-        k: self.history[k][:, 0:num_steps_to_export][
-            ~self.history[k].mask[:, 0:num_steps_to_export]
+        k: self.result[k][:, 0:num_steps_to_export][
+            ~self.result[k].mask[:, 0:num_steps_to_export]
         ]  # automatically flattens array
-        for k in self.history.dtype.fields
+        for k in self.result
     }
 
     times = [
@@ -43,7 +43,7 @@ def write_buffer(self):
         for n in range(self.steps_exported, self.steps_output)
     ]
 
-    _arr_template = self.history["ID"][:, 0:num_steps_to_export]
+    _arr_template = self.result["ID"][:, 0:num_steps_to_export]
     time_arr = np.repeat([times], _arr_template.shape[0], axis=0)
     data["time"] = time_arr[~_arr_template.mask]  # automatically flattens array
 
@@ -51,7 +51,7 @@ def write_buffer(self):
     df.to_parquet(self.outfile, engine="fastparquet", append=True)
 
     logger.info("Wrote %s steps to file %s" % (num_steps_to_export, self.outfile))
-    self.history.mask = True  # Reset history array, for new data
+    self.result.mask = True  # Reset history array, for new data
     self.steps_exported = self.steps_exported + num_steps_to_export
 
 
